@@ -4,6 +4,7 @@ mod server;
 mod structs;
 mod response;
 mod traits;
+mod handlers;
 
 #[tokio::main]
 async fn main() {

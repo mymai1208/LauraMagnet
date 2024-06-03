@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+use std::{net::SocketAddr, vec};
 
 use axum::{
     extract::{ConnectInfo, Request},
@@ -7,17 +7,29 @@ use axum::{
     Router,
 };
 use tokio::net::TcpListener;
-use tower_http::
-    trace::TraceLayer
-;
+use tower_http::trace::TraceLayer;
 
-use crate::structs::{HtmlTemplate, IndexPageTemplate};
+use crate::{
+    structs::{AdminPage, HtmlTemplate, IndexPageTemplate},
+    traits::HandlerTrait,
+};
 
 pub async fn init_server() {
-    let router = Router::new()
-        .route("/", get(index_handler));
+    let handlers: Vec<Box<dyn HandlerTrait>> = vec![Box::new(AdminPage::new())];
 
-    let app = router.layer(TraceLayer::new_for_http());
+    let router = {
+        let mut router = Router::new();
+
+        for handler in handlers {
+            handler.setup(&mut router).await;
+        }
+
+        router
+    };
+
+    let app = router
+        .route("/", get(index_handler))
+        .layer(TraceLayer::new_for_http());
 
     let tcp_listener = TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], 80)))
         .await
