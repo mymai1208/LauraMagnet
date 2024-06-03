@@ -8,36 +8,34 @@ use axum::{
 };
 
 use crate::{
-    structs::{AdminPage, HtmlTemplate},
+    structs::{HtmlTemplate, IndexPage},
     traits::HandlerTrait,
 };
 
+#[derive(Template)]
+#[template(path = "index.html")]
+pub struct IndexPageTemplate {}
+
 #[async_trait::async_trait]
-impl HandlerTrait for AdminPage {
+impl HandlerTrait for IndexPage {
     async fn setup(&self, router: &mut axum::Router) {
         let cloned = router.clone();
-
-        *router = cloned.route("/admin/login", get(admin_handler));
+        
+        *router = cloned.route("/", get(index_handler));
     }
 }
 
-impl AdminPage {
+impl IndexPage {
     pub fn new() -> Self {
         Self {}
     }
 }
 
-pub async fn admin_handler(
+pub async fn index_handler(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     request: Request,
 ) -> impl IntoResponse {
-    let template = AdminPageTemplate {};
-
-    println!("Request from: {}", addr.ip());
+    let template = IndexPageTemplate {};
 
     HtmlTemplate(template)
 }
-
-#[derive(Template)]
-#[template(path = "admin1-login.html")]
-pub struct AdminPageTemplate {}

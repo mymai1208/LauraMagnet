@@ -10,46 +10,46 @@ use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 
 use crate::{
-    structs::{AdminPage, HtmlTemplate, IndexPageTemplate},
-    traits::HandlerTrait,
+    structs::{Server},
+    traits::{HandlerTrait, ServerTrait},
 };
 
-pub async fn init_server() {
-    let handlers: Vec<Box<dyn HandlerTrait>> = vec![Box::new(AdminPage::new())];
+#[async_trait::async_trait]
+impl ServerTrait for Server {
+    async fn init_server(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let router = {
+            let mut router = Router::new();
 
-    let router = {
-        let mut router = Router::new();
+            for handler in &self.pages {
+                handler.setup(&mut router).await;
+            }
 
-        for handler in handlers {
-            handler.setup(&mut router).await;
-        }
+            router
+        };
 
-        router
-    };
+        let app = router.layer(TraceLayer::new_for_http());
 
-    let app = router
-        .route("/", get(index_handler))
-        .layer(TraceLayer::new_for_http());
+        let tcp_listener = TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], 80))).await?;
 
-    let tcp_listener = TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], 80)))
-        .await
-        .unwrap();
+        axum::serve(
+            tcp_listener,
+            app.into_make_service_with_connect_info::<SocketAddr>(),
+        )
+        .await?;
 
-    axum::serve(
-        tcp_listener,
-        app.into_make_service_with_connect_info::<SocketAddr>(),
-    )
-    .await
-    .unwrap();
+        Ok(())
+    }
+
+    fn add_page(&mut self, page: Box<dyn HandlerTrait + Send + Sync>) {
+        self.pages.push(page);
+    }
 }
 
-async fn index_handler(
-    ConnectInfo(addr): ConnectInfo<SocketAddr>,
-    request: Request,
-) -> impl IntoResponse {
-    let template = IndexPageTemplate {};
-
-    println!("Request from: {}", addr.ip());
-
-    HtmlTemplate(template)
+impl Server {
+    pub fn new(is_use_cloudflare: bool) -> Self {
+        Self {
+            is_use_cloudflare,
+            pages: Vec::new(),
+        }
+    }
 }

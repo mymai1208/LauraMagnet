@@ -1,5 +1,7 @@
 use askama::Template;
-use axum::response::{Html, IntoResponse, Response};
+use axum::{
+    response::{Html, IntoResponse, Response},
+};
 
 use crate::structs::HtmlTemplate;
 
@@ -9,7 +11,7 @@ where
 {
     fn into_response(self) -> Response {
         let body = self.0.render().unwrap();
-
+        
         Html(body).into_response()
     }
 }

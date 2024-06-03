@@ -1,16 +1,22 @@
-use crate::server::init_server;
+use structs::{AdminPage, IndexPage, Server};
+use traits::{ServerTrait};
 
+mod handlers;
+mod response;
 mod server;
 mod structs;
-mod response;
 mod traits;
-mod handlers;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
 
-    init_server().await;
-    
-    println!("Hello, world!");
+    let mut server = Server::new(false);
+
+    server.add_page(Box::new(AdminPage::new()));
+    server.add_page(Box::new(IndexPage::new()));
+
+    server.init_server().await?;
+
+    Ok(())
 }
