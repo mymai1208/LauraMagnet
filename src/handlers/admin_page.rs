@@ -14,10 +14,8 @@ use crate::{
 
 #[async_trait::async_trait]
 impl HandlerTrait for AdminPage {
-    async fn setup(&self, router: &mut axum::Router) {
-        let cloned = router.clone();
-
-        *router = cloned.route("/admin/login", get(admin_handler));
+    async fn setup(&self, router_addr: &mut axum::Router, router: axum::Router) {
+        *router_addr = router.route("/admin/login", get(admin_handler));
     }
 }
 
@@ -27,7 +25,7 @@ impl AdminPage {
     }
 }
 
-pub async fn admin_handler(
+async fn admin_handler(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     request: Request,
 ) -> impl IntoResponse {

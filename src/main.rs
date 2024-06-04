@@ -1,5 +1,5 @@
 use structs::{AdminPage, IndexPage, Server};
-use traits::{ServerTrait};
+use traits::ServerTrait;
 
 mod handlers;
 mod response;

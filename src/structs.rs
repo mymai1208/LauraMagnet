@@ -1,3 +1,4 @@
+
 use crate::traits::HandlerTrait;
 
 pub struct AdminPage {

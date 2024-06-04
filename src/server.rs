@@ -1,16 +1,11 @@
-use std::{net::SocketAddr, vec};
+use std::net::SocketAddr;
 
-use axum::{
-    extract::{ConnectInfo, Request},
-    response::IntoResponse,
-    routing::get,
-    Router,
-};
+use axum::Router;
 use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 
 use crate::{
-    structs::{Server},
+    structs::Server,
     traits::{HandlerTrait, ServerTrait},
 };
 
@@ -21,7 +16,9 @@ impl ServerTrait for Server {
             let mut router = Router::new();
 
             for handler in &self.pages {
-                handler.setup(&mut router).await;
+                let cloned = router.clone();
+
+                handler.setup(&mut router, cloned).await;
             }
 
             router
