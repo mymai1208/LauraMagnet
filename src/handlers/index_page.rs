@@ -25,7 +25,7 @@ impl HandlerTrait for IndexPage {
 
 impl IndexPage {
     pub fn new() -> Self {
-        Self {}
+        Self { }
     }
 }
 

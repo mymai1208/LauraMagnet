@@ -4,12 +4,11 @@ use askama::Template;
 use axum::{
     extract::{ConnectInfo, Request},
     response::IntoResponse,
-    routing::get,
+    routing::get
 };
 
 use crate::{
-    structs::{AdminPage, HtmlTemplate},
-    traits::HandlerTrait,
+    server::get_ip, structs::{AdminPage, HtmlTemplate}, traits::HandlerTrait, IS_USE_CLOUDFLARE
 };
 
 #[async_trait::async_trait]
@@ -21,7 +20,7 @@ impl HandlerTrait for AdminPage {
 
 impl AdminPage {
     pub fn new() -> Self {
-        Self {}
+        Self { }
     }
 }
 
@@ -31,7 +30,9 @@ async fn admin_handler(
 ) -> impl IntoResponse {
     let template = AdminPageTemplate {};
 
-    println!("Request from: {}", addr.ip());
+    let ip = get_ip(Some(request), Some(addr));
+
+    println!("Request from: {}", ip.unwrap_or("aa".to_string()));
 
     HtmlTemplate(template)
 }

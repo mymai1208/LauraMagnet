@@ -1,12 +1,13 @@
-use std::net::SocketAddr;
+use std::{net::SocketAddr, sync::Arc};
 
-use axum::Router;
+use axum::{extract::Request, Router};
 use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 
 use crate::{
     structs::Server,
     traits::{HandlerTrait, ServerTrait},
+    IS_USE_CLOUDFLARE,
 };
 
 #[async_trait::async_trait]
@@ -49,4 +50,30 @@ impl Server {
             pages: Vec::new(),
         }
     }
+}
+
+pub fn get_ip(
+    request: Option<Request>,
+    address: Option<SocketAddr>,
+) -> Result<String, Box<dyn std::error::Error>> {
+    return if IS_USE_CLOUDFLARE {
+        if request.is_none() {
+            return Err("Request is None".into());
+        }
+
+        let request = request.unwrap();
+        let header = request.headers().get("CF-Connecting-IP");
+
+        if header.is_none() {
+            return Err("CF-Connecting-IP is None".into());
+        }
+
+        Ok(header.unwrap().to_str().unwrap().to_string())
+    } else {
+        if address.is_none() {
+            return Err("Address is None".into());
+        }
+
+        Ok(address.unwrap().ip().to_string())
+    };
 }
