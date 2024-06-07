@@ -2,7 +2,7 @@ use axum::Router;
 
 #[async_trait::async_trait]
 pub trait HandlerTrait {
-    async fn setup(&self, router_addr: &mut axum::Router, router: Router);
+    async fn setup(&self, router_ptr: &mut axum::Router, router: Router);
 }
 
 #[async_trait::async_trait]

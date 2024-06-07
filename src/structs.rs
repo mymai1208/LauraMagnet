@@ -13,8 +13,8 @@ pub struct Server {
     pub pages: Vec<Box<dyn HandlerTrait + Send + Sync>>,
 }
 
-pub struct FakeShell {
-    
+pub struct Analyzer {
+
 }
 
 pub struct HtmlTemplate<T>(pub T);

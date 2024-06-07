@@ -1,7 +1,5 @@
 use askama::Template;
-use axum::{
-    response::{Html, IntoResponse, Response},
-};
+use axum::response::{Html, IntoResponse, Response};
 
 use crate::structs::HtmlTemplate;
 

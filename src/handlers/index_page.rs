@@ -18,8 +18,8 @@ pub struct IndexPageTemplate {}
 
 #[async_trait::async_trait]
 impl HandlerTrait for IndexPage {
-    async fn setup(&self, router_addr: &mut axum::Router, router: axum::Router) {
-        *router_addr = router.route("/", get(index_handler));
+    async fn setup(&self, router_ptr: &mut axum::Router, router: axum::Router) {
+        *router_ptr = router.route("/", get(index_handler));
     }
 }
 

@@ -6,7 +6,7 @@ mod response;
 mod server;
 mod structs;
 mod traits;
-mod fake_shell;
+mod analyzer;
 
 const IS_USE_CLOUDFLARE: bool = false;
 

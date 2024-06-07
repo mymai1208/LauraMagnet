@@ -684,6 +684,8 @@ dependencies = [
  "askama",
  "async-trait",
  "axum",
+ "once_cell",
+ "percent-encoding",
  "regex",
  "reqwest",
  "tokio",

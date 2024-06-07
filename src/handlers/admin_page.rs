@@ -8,13 +8,13 @@ use axum::{
 };
 
 use crate::{
-    server::get_ip, structs::{AdminPage, HtmlTemplate}, traits::HandlerTrait, IS_USE_CLOUDFLARE
+    server::get_ip, structs::{AdminPage, HtmlTemplate}, traits::HandlerTrait
 };
 
 #[async_trait::async_trait]
 impl HandlerTrait for AdminPage {
-    async fn setup(&self, router_addr: &mut axum::Router, router: axum::Router) {
-        *router_addr = router.route("/admin/login", get(admin_handler));
+    async fn setup(&self, router_ptr: &mut axum::Router, router: axum::Router) {
+        *router_ptr = router.route("/admin/login", get(admin_handler));
     }
 }
 

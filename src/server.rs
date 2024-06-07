@@ -1,11 +1,17 @@
-use std::{net::SocketAddr, sync::Arc};
+use std::net::SocketAddr;
 
-use axum::{extract::Request, Router};
+use axum::{
+    body::Body,
+    extract::Request,
+    Router,
+};
 use tokio::net::TcpListener;
+use tower::ServiceBuilder;
 use tower_http::trace::TraceLayer;
+use tracing::{warn, Span};
 
 use crate::{
-    structs::Server,
+    structs::{Analyzer, Server},
     traits::{HandlerTrait, ServerTrait},
     IS_USE_CLOUDFLARE,
 };
@@ -25,7 +31,13 @@ impl ServerTrait for Server {
             router
         };
 
-        let app = router.layer(TraceLayer::new_for_http());
+        let app = router.layer(
+            ServiceBuilder::new().layer(TraceLayer::new_for_http().on_request(
+                |request: &Request<Body>, _span: &Span| {
+                    on_request(request);
+                },
+            )),
+        );
 
         let tcp_listener = TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], 80))).await?;
 
@@ -49,6 +61,14 @@ impl Server {
             is_use_cloudflare,
             pages: Vec::new(),
         }
+    }
+}
+
+fn on_request(request: &Request<Body>) {
+    let result = Analyzer::global().analyze(request.uri().clone());
+
+    if result.is_err() {
+        warn!("Failed to analyze request: {:?}", result.err().unwrap());
     }
 }
 
