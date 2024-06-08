@@ -1,9 +1,7 @@
 use std::net::SocketAddr;
 
 use axum::{
-    body::Body,
-    extract::Request,
-    Router,
+    body::Body, extract::{ConnectInfo, Request}, RequestExt, Router
 };
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
@@ -33,7 +31,7 @@ impl ServerTrait for Server {
 
         let app = router.layer(
             ServiceBuilder::new().layer(TraceLayer::new_for_http().on_request(
-                |request: &Request<Body>, _span: &Span| {
+                |request: &Request<Body>, _span: &Span| {                    
                     on_request(request);
                 },
             )),
@@ -65,7 +63,7 @@ impl Server {
 }
 
 fn on_request(request: &Request<Body>) {
-    let result = Analyzer::global().analyze(request.uri().clone());
+    let result = Analyzer::global().analyze(request);
 
     if result.is_err() {
         warn!("Failed to analyze request: {:?}", result.err().unwrap());
@@ -73,8 +71,8 @@ fn on_request(request: &Request<Body>) {
 }
 
 pub fn get_ip(
-    request: Option<Request>,
-    address: Option<SocketAddr>,
+    request: Option<&Request>,
+    address: Option<&SocketAddr>,
 ) -> Result<String, Box<dyn std::error::Error>> {
     return if IS_USE_CLOUDFLARE {
         if request.is_none() {

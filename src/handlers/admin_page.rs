@@ -6,6 +6,7 @@ use axum::{
     response::IntoResponse,
     routing::get
 };
+use tracing::info;
 
 use crate::{
     server::get_ip, structs::{AdminPage, HtmlTemplate}, traits::HandlerTrait
@@ -30,9 +31,9 @@ async fn admin_handler(
 ) -> impl IntoResponse {
     let template = AdminPageTemplate {};
 
-    let ip = get_ip(Some(request), Some(addr));
+    let ip = get_ip(Some(&request), Some(&addr));
 
-    println!("Request from: {}", ip.unwrap_or("aa".to_string()));
+    info!("Request from: {}", ip.unwrap_or("aa".to_string()));
 
     HtmlTemplate(template)
 }

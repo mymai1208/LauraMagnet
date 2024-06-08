@@ -1,7 +1,10 @@
-use axum::http::Uri;
-use once_cell::sync::OnceCell;
+use std::net::SocketAddr;
 
-use crate::structs::Analyzer;
+use axum::{body::Body, extract::{ConnectInfo, Request}, http::Uri};
+use once_cell::sync::OnceCell;
+use tracing::info;
+
+use crate::{server::get_ip, structs::Analyzer};
 
 static INSTANCE: OnceCell<Analyzer> = OnceCell::new();
 
@@ -16,14 +19,17 @@ impl Analyzer {
         Analyzer {}
     }
 
-    pub fn analyze(&self, uri: Uri) -> Result<(), Box<dyn std::error::Error>> {
-        if !self.analyze_query(uri.clone())? {
+    pub fn analyze(&self, request: &Request<Body>) -> Result<(), Box<dyn std::error::Error>> {
+        let url = request.uri();
+        let connect_info = request.extensions().get::<ConnectInfo<SocketAddr>>();
+
+        if !self.analyze_query(url.clone())? {
             return Ok(());
         }
 
-        println!(
+        info!(
             "Detected potential download command in URI: {:?}",
-            uri.to_string()
+            url.to_string()
         );
 
         return Ok(());
