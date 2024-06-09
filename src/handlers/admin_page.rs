@@ -31,10 +31,6 @@ async fn admin_handler(
 ) -> impl IntoResponse {
     let template = AdminPageTemplate {};
 
-    let ip = get_ip(Some(&request), Some(&addr));
-
-    info!("Request from: {}", ip.unwrap_or("aa".to_string()));
-
     HtmlTemplate(template)
 }
 

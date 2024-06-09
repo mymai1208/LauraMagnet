@@ -1,8 +1,12 @@
 use std::net::SocketAddr;
 
-use axum::{body::Body, extract::{ConnectInfo, Request}, http::Uri};
+use axum::{
+    body::Body,
+    extract::{ConnectInfo, Request},
+    http::Uri,
+};
 use once_cell::sync::OnceCell;
-use tracing::info;
+use tracing::{info, warn};
 
 use crate::{server::get_ip, structs::Analyzer};
 
@@ -23,20 +27,25 @@ impl Analyzer {
         let url = request.uri();
         let connect_info = request.extensions().get::<ConnectInfo<SocketAddr>>();
 
-        if !self.analyze_query(url.clone())? {
-            return Ok(());
-        }
+        let ip: String = if let Some(connect_info) = connect_info {
+            get_ip(Some(request), Some(&connect_info.0))
+        } else {
+            get_ip(Some(request), None)
+        }?;
 
-        info!(
-            "Detected potential download command in URI: {:?}",
-            url.to_string()
-        );
+        if self.analyze_query(url.clone())? {
+            info!(
+                "{} - Detected potential download command in URI: {:?}",
+                ip,
+                url.to_string()
+            );
+        }
 
         return Ok(());
     }
 
     fn analyze_query(&self, uri: Uri) -> Result<bool, Box<dyn std::error::Error>> {
-        let mut score = 0;
+        let mut score = 0.0;
 
         if uri.query().is_none() {
             return Ok(false);
@@ -48,16 +57,26 @@ impl Analyzer {
             .to_string()
             .replace('+', " ");
 
+        // pipe payload to shell
         if decode.contains("| sh") {
-            score += 1;
+            score += 1.0;
+        }
+
+        // change the permission a downloaded file
+        if decode.contains("chmod 777") {
+            score += 1.0;
+        }
+
+        if decode.contains("/bin/sh") {
+            score += 0.5;
         }
 
         for command in DOWNLOAD_COMMANDS {
             if decode.contains(command) {
-                score += 1;
+                score += 1.0;
             }
         }
 
-        return Ok(score > 1);
+        return Ok(score > 1.0);
     }
 }
