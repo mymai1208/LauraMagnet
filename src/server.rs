@@ -39,7 +39,7 @@ impl ServerTrait for Server {
             )),
         );
 
-        let tcp_listener = TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], 80))).await?;
+        let tcp_listener = TcpListener::bind("0.0.0.0:80").await?;
 
         axum::serve(
             tcp_listener,
@@ -71,7 +71,8 @@ fn on_request(request: &Request<Body>) {
         get_ip(Some(request), Some(&connect_info.0))
     } else {
         get_ip(Some(request), None)
-    }.unwrap();
+    }
+    .unwrap();
 
     let result = Analyzer::global().analyze(request, ip);
 
