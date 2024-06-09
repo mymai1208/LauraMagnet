@@ -1,14 +1,12 @@
-use std::net::SocketAddr;
-
 use axum::{
     body::Body,
-    extract::{ConnectInfo, Request},
+    extract::Request,
     http::Uri,
 };
 use once_cell::sync::OnceCell;
-use tracing::{info, warn};
+use tracing::info;
 
-use crate::{server::get_ip, structs::Analyzer};
+use crate::structs::Analyzer;
 
 static INSTANCE: OnceCell<Analyzer> = OnceCell::new();
 
@@ -23,15 +21,8 @@ impl Analyzer {
         Analyzer {}
     }
 
-    pub fn analyze(&self, request: &Request<Body>) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn analyze(&self, request: &Request<Body>, ip: String) -> Result<(), Box<dyn std::error::Error>> {
         let url = request.uri();
-        let connect_info = request.extensions().get::<ConnectInfo<SocketAddr>>();
-
-        let ip: String = if let Some(connect_info) = connect_info {
-            get_ip(Some(request), Some(&connect_info.0))
-        } else {
-            get_ip(Some(request), None)
-        }?;
 
         if self.analyze_query(url.clone())? {
             info!(

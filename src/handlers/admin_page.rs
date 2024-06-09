@@ -6,10 +6,9 @@ use axum::{
     response::IntoResponse,
     routing::get
 };
-use tracing::info;
 
 use crate::{
-    server::get_ip, structs::{AdminPage, HtmlTemplate}, traits::HandlerTrait
+    structs::{AdminPage, HtmlTemplate}, traits::HandlerTrait
 };
 
 #[async_trait::async_trait]

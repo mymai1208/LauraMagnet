@@ -1,7 +1,9 @@
 use std::net::SocketAddr;
 
 use axum::{
-    body::Body, extract::{ConnectInfo, Request}, RequestExt, Router
+    body::Body,
+    extract::{ConnectInfo, Request},
+    Router,
 };
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
@@ -31,7 +33,7 @@ impl ServerTrait for Server {
 
         let app = router.layer(
             ServiceBuilder::new().layer(TraceLayer::new_for_http().on_request(
-                |request: &Request<Body>, _span: &Span| {                    
+                |request: &Request<Body>, _span: &Span| {
                     on_request(request);
                 },
             )),
@@ -63,7 +65,15 @@ impl Server {
 }
 
 fn on_request(request: &Request<Body>) {
-    let result = Analyzer::global().analyze(request);
+    let connect_info = request.extensions().get::<ConnectInfo<SocketAddr>>();
+
+    let ip = if let Some(connect_info) = connect_info {
+        get_ip(Some(request), Some(&connect_info.0))
+    } else {
+        get_ip(Some(request), None)
+    }.unwrap();
+
+    let result = Analyzer::global().analyze(request, ip);
 
     if result.is_err() {
         warn!("Failed to analyze request: {:?}", result.err().unwrap());

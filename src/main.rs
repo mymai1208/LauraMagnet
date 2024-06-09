@@ -1,9 +1,7 @@
-use std::{fmt::Debug, path};
-
 use structs::{AdminPage, IndexPage, Server};
-use tracing::{field::Field, Level};
+use tracing::Level;
 use tracing_subscriber::{
-    fmt::{format, writer::MakeWriterExt, FormatFields, FormattedFields},
+    fmt::writer::MakeWriterExt,
     layer::SubscriberExt,
     util::SubscriberInitExt,
 };
