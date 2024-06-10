@@ -41,7 +41,7 @@ impl ServerTrait for Server {
                     get_ip(Some(request), None)
                 }.unwrap_or("unknown".to_string());
 
-                info_span!("Request", uri = %request.uri(), method = %request.method(), version = ?request.version(), ip = %ip)
+                info_span!("Request", method = %request.method(), ip = %ip, uri = %request.uri(), version = ?request.version())
             }).on_request(
                 |request: &Request<Body>, _span: &Span| {
                     on_request(request);
