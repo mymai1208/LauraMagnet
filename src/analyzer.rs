@@ -32,7 +32,29 @@ impl Analyzer {
             );
         }
 
+        if self.analyze_access_path(url.clone())? {
+            info!(
+                "{} - Detected potential access to sensitive path in URI: {:?}",
+                ip,
+                url.to_string()
+            );
+        }
+
         return Ok(());
+    }
+
+    fn analyze_access_path(&self, uri: Uri) -> Result<bool, Box<dyn std::error::Error>> {
+        let path = uri.path();
+
+        if path.ends_with(".env") {
+            return Ok(true);
+        }
+
+        if path.ends_with("/config") {
+            return Ok(true);
+        }
+
+        return Ok(false);
     }
 
     fn analyze_query(&self, uri: Uri) -> Result<bool, Box<dyn std::error::Error>> {
