@@ -7,10 +7,7 @@ use tracing_subscriber::{
 };
 use traits::ServerTrait;
 
-mod analyzer;
-mod handlers;
-mod response;
-mod server;
+mod http;
 mod structs;
 mod traits;
 
@@ -39,12 +36,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .init();
 
-    let mut server = Server::new(IS_USE_CLOUDFLARE);
+    let mut http_server = Server::new(IS_USE_CLOUDFLARE);
 
-    server.add_page(Box::new(AdminPage::new()));
-    server.add_page(Box::new(IndexPage::new()));
+    http_server.add_page(Box::new(AdminPage::new()));
+    http_server.add_page(Box::new(IndexPage::new()));
 
-    server.init_server().await?;
+    http_server.init_server().await?;
 
     Ok(())
 }
