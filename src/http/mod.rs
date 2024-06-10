@@ -1,4 +1,4 @@
 pub mod server;
-pub mod handlers;
+pub mod pages;
 pub mod response;
 pub mod analyzer;

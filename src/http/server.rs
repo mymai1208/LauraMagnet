@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use axum::{
     body::Body,
-    extract::{connect_info, ConnectInfo, Request},
+    extract::{ConnectInfo, Request},
     Router,
 };
 use tokio::net::TcpListener;

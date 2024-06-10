@@ -68,6 +68,8 @@ impl Analyzer {
             .to_string()
             .replace('+', " ");
 
+        let cd_back_count = decode.matches("../").count();
+
         // pipe payload to shell
         if decode.contains("| sh") {
             score += 1.0;
@@ -79,7 +81,7 @@ impl Analyzer {
         }
 
         if decode.contains("/bin/sh") {
-            score += 0.5;
+            score += (cd_back_count as f64 * 0.2) + 0.5;
         }
 
         for command in DOWNLOAD_COMMANDS {
@@ -87,7 +89,6 @@ impl Analyzer {
                 score += 1.0;
             }
         }
-
         return Ok(score > 1.0);
     }
 }
