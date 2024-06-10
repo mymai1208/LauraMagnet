@@ -21,21 +21,19 @@ impl Analyzer {
         Analyzer {}
     }
 
-    pub fn analyze(&self, request: &Request<Body>, ip: String) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn analyze(&self, request: &Request<Body>) -> Result<(), Box<dyn std::error::Error>> {
         let url = request.uri();
 
         if self.analyze_query(url.clone())? {
             info!(
-                "{} - Detected potential download command in URI: {:?}",
-                ip,
+                "Detected potential download command in URI: {:?}",
                 url.to_string()
             );
         }
 
         if self.analyze_access_path(url.clone())? {
             info!(
-                "{} - Detected potential access to sensitive path in URI: {:?}",
-                ip,
+                "Detected potential access to sensitive path in URI: {:?}",
                 url.to_string()
             );
         }

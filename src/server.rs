@@ -2,13 +2,13 @@ use std::net::SocketAddr;
 
 use axum::{
     body::Body,
-    extract::{ConnectInfo, Request},
+    extract::{connect_info, ConnectInfo, Request},
     Router,
 };
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
 use tower_http::trace::TraceLayer;
-use tracing::{warn, Span};
+use tracing::{info_span, warn, Span};
 
 use crate::{
     structs::{Analyzer, Server},
@@ -32,7 +32,17 @@ impl ServerTrait for Server {
         };
 
         let app = router.layer(
-            ServiceBuilder::new().layer(TraceLayer::new_for_http().on_request(
+            ServiceBuilder::new().layer(TraceLayer::new_for_http().make_span_with(|request: &Request<Body>| {
+                let connect_info: Option<&ConnectInfo<SocketAddr>> = request.extensions().get::<ConnectInfo<SocketAddr>>();
+
+                let ip = if let Some(connect_info) = connect_info {
+                    get_ip(Some(request), Some(&connect_info.0))
+                } else {
+                    get_ip(Some(request), None)
+                }.unwrap_or("unknown".to_string());
+
+                info_span!("Request", uri = %request.uri(), method = %request.method(), version = ?request.version(), ip = %ip)
+            }).on_request(
                 |request: &Request<Body>, _span: &Span| {
                     on_request(request);
                 },
@@ -65,16 +75,7 @@ impl Server {
 }
 
 fn on_request(request: &Request<Body>) {
-    let connect_info = request.extensions().get::<ConnectInfo<SocketAddr>>();
-
-    let ip = if let Some(connect_info) = connect_info {
-        get_ip(Some(request), Some(&connect_info.0))
-    } else {
-        get_ip(Some(request), None)
-    }
-    .unwrap();
-
-    let result = Analyzer::global().analyze(request, ip);
+    let result = Analyzer::global().analyze(request);
 
     if result.is_err() {
         warn!("Failed to analyze request: {:?}", result.err().unwrap());
