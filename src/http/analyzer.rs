@@ -72,7 +72,8 @@ impl Analyzer {
             .to_string()
             .replace('+', " ");
 
-        let cd_back_count = decode.matches("/..").count() as f64;
+        let cd_back_regex = regex::Regex::new(r"/\.\./").unwrap();
+        let cd_back_count = cd_back_regex.find_iter(&decode).count() as f64;
 
         // pipe payload to shell
         if decode.contains("| sh") {
