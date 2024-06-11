@@ -52,6 +52,10 @@ impl Analyzer {
             return Ok(true);
         }
 
+        if path.ends_with("/eval-stdin.php") {
+            return Ok(true);
+        }
+
         return Ok(false);
     }
 
@@ -68,7 +72,7 @@ impl Analyzer {
             .to_string()
             .replace('+', " ");
 
-        let cd_back_count = decode.matches("../").count();
+        let cd_back_count = decode.matches("/..").count() as f64;
 
         // pipe payload to shell
         if decode.contains("| sh") {
@@ -81,7 +85,7 @@ impl Analyzer {
         }
 
         if decode.contains("/bin/sh") {
-            score += (cd_back_count as f64 * 0.2) + 0.5;
+            score += (cd_back_count * 0.2) + 0.5;
         }
 
         for command in DOWNLOAD_COMMANDS {
