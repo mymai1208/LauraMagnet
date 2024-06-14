@@ -1,12 +1,9 @@
-use axum::{
-    body::Body,
-    extract::Request,
-    http::Uri,
-};
+use axum::{body::Body, extract::Request, http::Uri};
+use futures::select;
 use once_cell::sync::OnceCell;
-use tracing::info;
+use tracing::{debug, field::debug, info};
 
-use crate::structs::Analyzer;
+use crate::{structs::Analyzer, utils::url_decode};
 
 static INSTANCE: OnceCell<Analyzer> = OnceCell::new();
 
@@ -25,17 +22,11 @@ impl Analyzer {
         let url = request.uri();
 
         if self.analyze_query(url.clone())? {
-            info!(
-                "Detected potential download command in URI: {:?}",
-                url.to_string()
-            );
+            info!("detected command injection");
         }
-
+        
         if self.analyze_access_path(url.clone())? {
-            info!(
-                "Detected potential access to sensitive path in URI: {:?}",
-                url.to_string()
-            );
+            info!("detected threat request: {:?}", url);
         }
 
         return Ok(());
@@ -44,15 +35,25 @@ impl Analyzer {
     fn analyze_access_path(&self, uri: Uri) -> Result<bool, Box<dyn std::error::Error>> {
         let path = uri.path();
 
-        if path.ends_with(".env") {
+        let decode = url_decode(path.to_string());
+
+        if decode.ends_with(".env") {
             return Ok(true);
         }
 
-        if path.ends_with("/config") {
+        if decode.ends_with("/config") {
             return Ok(true);
         }
 
-        if path.ends_with("/eval-stdin.php") {
+        if decode.ends_with("/eval-stdin.php") {
+            return Ok(true);
+        }
+
+        let cd_back_count = decode.matches("../").count() as f64;
+
+        if decode.contains("/bin/sh") && cd_back_count * 0.2 + 0.5 > 1.0 {
+            info!("detected shell hijack");
+
             return Ok(true);
         }
 
@@ -67,13 +68,7 @@ impl Analyzer {
         }
 
         let query = uri.query().unwrap();
-        let decode = percent_encoding::percent_decode_str(query)
-            .decode_utf8()?
-            .to_string()
-            .replace('+', " ");
-
-        let cd_back_regex = regex::Regex::new(r"/\.\./").unwrap();
-        let cd_back_count = cd_back_regex.find_iter(&decode).count() as f64;
+        let decode = url_decode(query.to_string());
 
         // pipe payload to shell
         if decode.contains("| sh") {
@@ -83,10 +78,6 @@ impl Analyzer {
         // change the permission a downloaded file
         if decode.contains("chmod 777") {
             score += 1.0;
-        }
-
-        if decode.contains("/bin/sh") {
-            score += (cd_back_count * 0.2) + 0.5;
         }
 
         for command in DOWNLOAD_COMMANDS {
