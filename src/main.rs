@@ -1,9 +1,7 @@
 use structs::{AdminPage, IndexPage, Server};
 use tracing::Level;
 use tracing_subscriber::{
-    fmt::writer::MakeWriterExt,
-    layer::SubscriberExt,
-    util::SubscriberInitExt,
+    fmt::writer::MakeWriterExt, layer::SubscriberExt, util::SubscriberInitExt,
 };
 use traits::ServerTrait;
 
@@ -26,7 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::fmt::layer()
-                .with_writer(non_blocking)
+                .with_writer(non_blocking.with_max_level(Level::DEBUG))
                 .with_ansi(false),
         )
         .with(

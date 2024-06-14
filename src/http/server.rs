@@ -1,16 +1,12 @@
-use std::{io::{BufReader, Read}, net::SocketAddr};
+use std::net::SocketAddr;
 
 use axum::{
-    body::{Body, BodyDataStream, HttpBody}, extract::{ConnectInfo, Request}, response::IntoResponse, serve::IncomingStream, Form, Json, RequestExt, Router
+    body::Body, extract::{ConnectInfo, Request}, Router
 };
-use futures::{stream::{IntoStream, StreamFuture}, task::UnsafeFutureObj, AsyncBufReadExt, FutureExt, StreamExt, TryStreamExt};
-use tokio::{
-    io::{AsyncReadExt, BufStream},
-    net::TcpListener,
-};
+use tokio::net::TcpListener;
 use tower::ServiceBuilder;
 use tower_http::trace::TraceLayer;
-use tracing::{info, info_span, warn, Span};
+use tracing::{info_span, warn, Span};
 
 use crate::{
     structs::{Analyzer, Server},
