@@ -1,7 +1,10 @@
+use std::{io::Read, str::FromStr};
+
 use axum::{body::Body, extract::Request, http::Uri};
-use futures::select;
+use base64::{prelude::BASE64_STANDARD_NO_PAD, Engine};
 use once_cell::sync::OnceCell;
-use tracing::info;
+use regex::Regex;
+use tracing::{info, warn};
 
 use crate::{structs::Analyzer, utils::url_decode};
 
@@ -72,10 +75,10 @@ impl Analyzer {
         }
 
         let query = uri.query().unwrap();
-        let decode = url_decode(query.to_string()).to_lowercase();
+        let decode = url_decode(query.to_string());
 
         // pipe payload to shell
-        if decode.contains("| sh") {
+        if Regex::new(r"\|(\s{0,1})sh").unwrap().is_match(&decode) {
             score += 1.0;
         }
 
@@ -90,6 +93,22 @@ impl Analyzer {
 
         if decode.contains("wget ") {
             score += 1.0;
+        }
+
+        //CVE-2024-3273
+        if uri.path().starts_with("/cgi-bin/nas_sharing.cgi") {
+            let payload_regex = Regex::new(r"system=(.*?)(&|$)").unwrap();
+
+            if let Some(result) = payload_regex.captures(&decode) {
+                let payload_base64 = result.get(1).unwrap().as_str();
+
+                let payload = String::from_utf8(BASE64_STANDARD_NO_PAD.decode(payload_base64)?)?;
+
+                warn!("detected CVE-2024-3273");
+                info!("payload: {}", payload);
+
+                score += 1.0;
+            }
         }
 
         return Ok(score > 1.0);
