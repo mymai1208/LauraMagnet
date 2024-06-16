@@ -1,13 +1,13 @@
 use axum::{body::Body, extract::Request, http::Uri};
 use futures::select;
 use once_cell::sync::OnceCell;
-use tracing::{debug, field::debug, info};
+use tracing::info;
 
 use crate::{structs::Analyzer, utils::url_decode};
 
 static INSTANCE: OnceCell<Analyzer> = OnceCell::new();
 
-const DOWNLOAD_COMMANDS: [&str; 2] = ["wget", "curl"];
+//const DOWNLOAD_COMMANDS: [&str; 2] = ["wget", "curl"];
 
 impl Analyzer {
     pub fn global() -> &'static Analyzer {
@@ -24,7 +24,7 @@ impl Analyzer {
         if self.analyze_query(url.clone())? {
             info!("detected command injection");
         }
-        
+
         if self.analyze_access_path(url.clone())? {
             info!("detected threat request: {:?}", url);
         }
@@ -49,6 +49,10 @@ impl Analyzer {
             return Ok(true);
         }
 
+        if decode.ends_with("/credentials") {
+            return Ok(true);
+        }
+
         let cd_back_count = decode.matches("../").count() as f64;
 
         if decode.contains("/bin/sh") && cd_back_count * 0.2 + 0.5 > 1.0 {
@@ -68,7 +72,7 @@ impl Analyzer {
         }
 
         let query = uri.query().unwrap();
-        let decode = url_decode(query.to_string());
+        let decode = url_decode(query.to_string()).to_lowercase();
 
         // pipe payload to shell
         if decode.contains("| sh") {
@@ -80,11 +84,14 @@ impl Analyzer {
             score += 1.0;
         }
 
-        for command in DOWNLOAD_COMMANDS {
-            if decode.contains(command) {
-                score += 1.0;
-            }
+        if decode.contains("rm -") {
+            score += 1.0;
         }
+
+        if decode.contains("wget ") {
+            score += 1.0;
+        }
+
         return Ok(score > 1.0);
     }
 }
