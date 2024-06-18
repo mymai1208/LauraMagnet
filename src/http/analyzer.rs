@@ -75,42 +75,53 @@ impl Analyzer {
         }
 
         let query = uri.query().unwrap();
-        let decode = url_decode(query.to_string());
+        let queries = query.split('&').collect::<Vec<&str>>();
 
+        for query in queries {
+            let args = query.split('=').collect::<Vec<&str>>();
+            let decode: String = url_decode(query.to_string());
+
+            score += self.is_suspicion_score(&decode);
+
+            if args[1].len() > 50 {
+                let base64 = BASE64_STANDARD_NO_PAD.decode(args[1].as_bytes());
+
+                if base64.is_err() {
+                    score += 0.2;
+                    continue;
+                }
+
+                let payload = String::from_utf8(base64.unwrap())?;
+
+                info!("detected base64 payload: {}", payload);
+
+                score += self.is_suspicion_score(&payload)
+            }
+        }
+
+        return Ok(score >= 1.0);
+    }
+
+    fn is_suspicion_score(&self, message: &str) -> f64 {
+        let mut score = 0.0;
         // pipe payload to shell
-        if Regex::new(r"\|(\s{0,1})sh").unwrap().is_match(&decode) {
+        if Regex::new(r"\|(\s{0,1})sh").unwrap().is_match(message) {
             score += 1.0;
         }
 
         // change the permission a downloaded file
-        if decode.contains("chmod 777") {
+        if message.contains("chmod 777") {
             score += 1.0;
         }
 
-        if decode.contains("rm -") {
+        if message.contains("rm -") {
             score += 1.0;
         }
 
-        if decode.contains("wget ") {
+        if message.contains("wget ") {
             score += 1.0;
         }
 
-        //CVE-2024-3273
-        if uri.path().starts_with("/cgi-bin/nas_sharing.cgi") {
-            let payload_regex = Regex::new(r"system=(.*?)(&|$)").unwrap();
-
-            if let Some(result) = payload_regex.captures(&decode) {
-                let payload_base64 = result.get(1).unwrap().as_str();
-
-                let payload = String::from_utf8(BASE64_STANDARD_NO_PAD.decode(payload_base64)?)?;
-
-                warn!("detected CVE-2024-3273");
-                info!("payload: {}", payload);
-
-                score += 1.0;
-            }
-        }
-
-        return Ok(score > 1.0);
+        return score;
     }
 }
