@@ -96,7 +96,7 @@ pub fn get_ip(
             return Err("CF-Connecting-IP is None".into());
         }
 
-        Ok(header.unwrap().to_str().unwrap().to_string())
+        Ok(header.unwrap().to_str().unwrap_or("unknown").to_string())
     } else {
         if address.is_none() {
             return Err("Address is None".into());

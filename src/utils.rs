@@ -1,7 +1,6 @@
-pub fn url_decode(url: String) -> String {
+pub fn url_decode(url: String) -> Result<String, Box<dyn std::error::Error>> {
     let decoded = percent_encoding::percent_decode_str(&url)
-        .decode_utf8()
-        .unwrap()
+        .decode_utf8()?
         .to_string()
         .replace('+', " ");
     
@@ -10,5 +9,5 @@ pub fn url_decode(url: String) -> String {
         return url_decode(decoded);
     }
 
-    return decoded;
+    return Ok(decoded);
 }

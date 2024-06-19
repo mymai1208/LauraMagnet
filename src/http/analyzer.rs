@@ -38,7 +38,7 @@ impl Analyzer {
     fn analyze_access_path(&self, uri: Uri) -> Result<bool, Box<dyn std::error::Error>> {
         let path = uri.path();
 
-        let decode = url_decode(path.to_string());
+        let decode = url_decode(path.to_string())?;
 
         if decode.ends_with(".env") {
             return Ok(true);
@@ -79,9 +79,14 @@ impl Analyzer {
 
         for query in queries {
             let args = query.split('=').collect::<Vec<&str>>();
-            let decode: String = url_decode(query.to_string());
+            let decode = url_decode(query.to_string());
 
-            score += self.is_suspicion_score(&decode);
+            if decode.is_err() {
+                warn!("failed to decode query: {:?}", decode.err().unwrap());
+                continue;
+            }
+
+            score += self.is_suspicion_score(&decode.unwrap());
 
             if args[1].len() > 50 {
                 let base64 = BASE64_STANDARD_NO_PAD.decode(args[1].as_bytes());
@@ -104,7 +109,7 @@ impl Analyzer {
 
     fn is_suspicion_score(&self, message: &str) -> f64 {
         let mut score = 0.0;
-        // pipe payload to shell
+        // using pipe a sending the payload to shell
         if Regex::new(r"\|(\s{0,1})sh").unwrap().is_match(message) {
             score += 1.0;
         }
