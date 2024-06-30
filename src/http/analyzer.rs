@@ -1,5 +1,3 @@
-use std::{io::Read, str::FromStr};
-
 use axum::{body::Body, extract::Request, http::Uri};
 use base64::{prelude::BASE64_STANDARD_NO_PAD, Engine};
 use once_cell::sync::OnceCell;
@@ -87,6 +85,10 @@ impl Analyzer {
             }
 
             score += self.is_suspicion_score(&decode.unwrap());
+
+            if args.len() < 2 {
+                continue;
+            }
 
             if args[1].len() > 50 {
                 let base64 = BASE64_STANDARD_NO_PAD.decode(args[1].as_bytes());
